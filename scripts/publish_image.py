@@ -23,7 +23,7 @@ def publish(ref, revision, run=command, inspect=inspect_ref):
     digest = None
     for tag in tags:
         if tag == 'main':
-            current = run(['gh', 'api', 'repos/hyperme-sh/hypermesh-pricing/commits/main', '--jq', '.sha']).strip()
+            current = run(['gh', 'api', 'repos/hyperme-sh/pricing/commits/main', '--jq', '.sha']).strip()
             if current != revision:
                 raise ValueError('Superseded main revision; channel left unchanged')
         target = IMAGE + ':' + tag
