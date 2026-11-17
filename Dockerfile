@@ -1,21 +1,23 @@
-# Alpine works here: the service's only third-party packages (FastAPI, Pydantic,
-# uvicorn) publish musllinux wheels, so the image does not need a compiler.
-FROM python:3.13-alpine
+FROM python:3.13-alpine@sha256:9ef1a599f863231c3d91e941389bfdc4a2d6070557243d54df1a4e57015b960e AS build
+WORKDIR /build
 
+COPY pyproject.toml README.md LICENSE ./
+COPY pricing_core ./pricing_core
+COPY pricing_service ./pricing_service
+
+RUN python -m venv --without-pip /app/.venv \
+    && python -m pip --python /app/.venv install --no-cache-dir ".[service]"
+
+FROM python:3.13-alpine@sha256:9ef1a599f863231c3d91e941389bfdc4a2d6070557243d54df1a4e57015b960e
 WORKDIR /app
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    PATH="/app/.venv/bin:${PATH}"
 
 RUN adduser -D -u 10001 pricing
-
-COPY pyproject.toml README.md ./
-COPY pricing_core ./pricing_core
-COPY pricing_service ./pricing_service
-COPY openapi ./openapi
-
-RUN pip install --no-cache-dir ".[service]" \
-    && chown -R pricing:pricing /app
+COPY --from=build /app/.venv /app/.venv
+COPY LICENSE /usr/share/licenses/hypermesh-pricing/
 
 USER pricing
 EXPOSE 8080
