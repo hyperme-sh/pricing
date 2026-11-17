@@ -20,6 +20,10 @@ def publish(ref, revision, run=command, inspect=inspect_ref):
         tags = [require_tag(ref.removeprefix('refs/tags/'))]
     else:
         raise ValueError('Unsupported publication ref')
+    observed = run(['docker', 'image', 'inspect', 'hypermesh-pricing:candidate',
+                    '--format', '{{ index .Config.Labels "org.opencontainers.image.revision" }}']).strip()
+    if observed != revision:
+        raise ValueError('Tested image source revision differs; no publication performed')
     digest = None
     for tag in tags:
         if tag == 'main':
