@@ -24,6 +24,8 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Build image
-        run: docker build -t hypermesh-pricing:ci .
+        env:
+          SOURCE_REVISION: ${{ github.sha }}
+        run: docker build --label "org.opencontainers.image.revision=$SOURCE_REVISION" -t hypermesh-pricing:ci .
       - name: Check startup and /healthz
         run: bash scripts/smoke-image.sh hypermesh-pricing:ci

@@ -16,6 +16,8 @@ def fixture(fail_source=False, stale=False):
     calls = []
     def command(args):
         calls.append(args)
+        if args[:3] == ['docker', 'image', 'inspect']:
+            return SHA + '\n'
         if args[:2] == ['gh', 'api']:
             return ('c'*40 if stale else SHA) + '\n'
         if args[:2] == ['docker', 'push']:
@@ -61,3 +63,26 @@ def test_final_write_error_is_not_reported_as_success():
         return command(args)
     with pytest.raises(subprocess.CalledProcessError):
         publisher.publish('refs/heads/main', SHA, ambiguous, lambda target: DIGEST)
+
+
+@pytest.mark.parametrize('label', ['', '<no value>', 'c' * 40, SHA + '\nextra'])
+def test_missing_or_foreign_image_revision_prevents_all_publication(label):
+    calls = []
+    def command(args):
+        calls.append(args)
+        if args[:3] != ['docker', 'image', 'inspect']:
+            pytest.fail('Unverified candidate reached publication')
+        return label
+    with pytest.raises(ValueError, match='source revision differs'):
+        publisher.publish('refs/heads/main', SHA, command, lambda _: DIGEST)
+    assert len(calls) == 1
+
+
+def test_workflows_label_before_testing_without_rebuilding():
+    root = Path(__file__).resolve().parents[1]
+    for name in ('ci.yml', 'release.yml'):
+        source = (root / '.github/workflows' / name).read_text()
+        assert 'SOURCE_REVISION: ${{ github.sha }}' in source
+        assert source.count('docker build ') == 1
+        assert '--label "org.opencontainers.image.revision=$SOURCE_REVISION"' in source
+        assert source.index('docker build ') < source.index('run: bash scripts/smoke-image.sh')
