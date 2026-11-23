@@ -70,4 +70,4 @@ Use exact versions and digests for downloadable bundles and to record or verify 
 ### Design note before new resources
 - Before adding any new Azure or cloud resource type, new service, new repository, new registry, Key Vault, database server, workspace or environment, or a second copy of anything that already exists, open a design note issue that says what it is, why the existing one can't be used, and its cost. Wait until Chris approves it in that issue.
 - The PR that implements it must link the approved design note. PRs that add such resources without one will be closed.
-- All cloud resources are declared in Terraform in FyberLabs/infra. Never create, change or delete cloud resources by hand (CLI, portal, SDK or scripts).
+- All cloud resources are declared in Terraform in the owning infrastructure repository. Never create, change or delete cloud resources by hand (CLI, portal, SDK or scripts).
